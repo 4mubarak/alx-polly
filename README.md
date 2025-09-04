@@ -7,17 +7,16 @@ Welcome to ALX Polly, a full-stack polling application built with Next.js, TypeS
 ALX Polly allows authenticated users to create, share, and vote on polls. It's a simple yet powerful application that demonstrates key features of modern web development:
 
 -   **Authentication**: Secure user sign-up and login.
--   **Poll Management**: Users can create, view, and delete their own polls.
+-   **Poll Management**: Users can create, view, update, and delete their own polls.
 -   **Voting System**: A straightforward system for casting and viewing votes.
 -   **User Dashboard**: A personalized space for users to manage their polls.
 
-The application is built with a modern tech stack:
-
--   **Framework**: [Next.js](https://nextjs.org/) (App Router)
--   **Language**: [TypeScript](https://www.typescriptlang.org/)
--   **Backend & Database**: [Supabase](https://supabase.io/)
--   **UI**: [Tailwind CSS](https://tailwindcss.com/) with [shadcn/ui](https://ui.shadcn.com/)
--   **State Management**: React Server Components and Client Components
+### Tech Stack
+-   **Framework**: Next.js (App Router)
+-   **Language**: TypeScript
+-   **Auth & Database**: Supabase
+-   **Styling**: Tailwind CSS with shadcn/ui
+-   **State**: Server Components; Client Components only when interactivity is required
 
 ---
 
@@ -42,55 +41,86 @@ As a developer, writing functional code is only half the battle. Ensuring that t
     -   Write secure, efficient, and clean code to patch the security holes.
     -   Ensure that your fixes do not break existing functionality for legitimate users.
 
-### Where to Start?
-
-A good security audit involves both static code analysis and dynamic testing. Here’s a suggested approach:
-
-1.  **Familiarize Yourself with the Code**:
-    -   Start with `app/lib/actions/` to understand how the application interacts with the database.
-    -   Explore the page routes in the `app/(dashboard)/` directory. How is data displayed and managed?
-    -   Look for hidden or undocumented features. Are there any pages not linked in the main UI?
-
-2.  **Use Your AI Assistant**:
-    -   This is an open-book test. You are encouraged to use AI tools to help you.
-    -   Ask your AI assistant to review snippets of code for security issues.
-    -   Describe a feature's behavior to your AI and ask it to identify potential attack vectors.
-    -   When you find a vulnerability, ask your AI for the best way to patch it.
-
 ---
 
 ## Getting Started
 
-To begin your security audit, you'll need to get the application running on your local machine.
-
 ### 1. Prerequisites
+-   Node.js v20+
+-   npm (or yarn/pnpm)
+-   A Supabase project (free tier works)
 
--   [Node.js](https://nodejs.org/) (v20.x or higher recommended)
--   [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
--   A [Supabase](https://supabase.io/) account (the project is pre-configured, but you may need your own for a clean slate).
+### 2. Supabase Setup
+1. Create a project at `https://supabase.com/`.
+2. In the SQL editor, create tables `polls` and `votes` similar to:
+   - `polls(id uuid primary key default gen_random_uuid(), user_id uuid not null, question text not null, options jsonb not null, created_at timestamptz default now())`
+   - `votes(id uuid primary key default gen_random_uuid(), poll_id uuid references polls(id) on delete cascade, user_id uuid, option_index int not null, created_at timestamptz default now())`
+3. Recommended: add unique constraint on `votes(poll_id, user_id)` to enforce one vote per user.
+4. Optional but recommended: enable RLS with policies restricting writes to owners.
 
-### 2. Installation
+### 3. Environment Variables
+Create a `.env.local` file in the project root with your Supabase keys:
 
-Clone the repository and install the dependencies:
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+# If you later add server-only actions needing elevated access, load a secret key as well:
+# SUPABASE_SECRET_KEY=your_service_role_key
+```
 
+### 4. Installation
 ```bash
 git clone <repository-url>
 cd alx-polly
 npm install
 ```
 
-### 3. Environment Variables
-
-The project uses Supabase for its backend. An environment file `.env.local` is needed.Use the keys you created during the Supabase setup process.
-
-### 4. Running the Development Server
-
-Start the application in development mode:
-
+### 5. Run the Development Server
 ```bash
 npm run dev
 ```
+Visit `http://localhost:3000`.
 
-The application will be available at `http://localhost:3000`.
+---
+
+## Usage Examples
+
+### Register and Login
+- Navigate to `/register` to create an account.
+- Then login at `/login`.
+
+### Create a Poll
+- Go to your dashboard/polls page.
+- Enter a question and at least two options.
+- Submit to create the poll.
+
+### Vote on a Poll
+- Open a poll’s details page.
+- Select an option and submit your vote.
+- You must be logged in to vote; duplicate votes by the same user are blocked.
+
+### Manage Your Polls
+- From your dashboard, you can update the poll’s question/options or delete polls you own.
+
+---
+
+## Testing and Development Notes
+- This project uses Server Actions for mutations and Server Components for data fetching where possible.
+- Ensure your `.env.local` is present; without it, Supabase calls will fail.
+- If you add tests later, a typical flow is:
+```bash
+# Lint/type-check (if configured)
+npm run lint
+npm run typecheck
+# Run tests (if configured)
+npm test
+```
+
+---
+
+## Troubleshooting
+- 401/redirect loops: confirm `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` values.
+- Cannot fetch polls: ensure your tables exist and your session is valid.
+- Votes not recorded: check the unique constraint and that you are authenticated.
 
 Good luck, engineer! This is your chance to step into the shoes of a security professional and make a real impact on the quality and safety of this application. Happy hunting!
